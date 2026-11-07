@@ -7,11 +7,15 @@ import {
 } from "@headlessui/vue";
 
 import Sidebar from "@/Layouts/Partials/Sidebar.vue";
+
 import { ref, computed } from "vue";
 import { Head, Link, usePage } from "@inertiajs/vue3";
+
 import { IconLayoutSidebar, IconX } from "@tabler/icons-vue";
+
 import Avatar from "@/Components/ui/avatar/Avatar.vue";
 import AvatarFallback from "@/Components/ui/avatar/AvatarFallback.vue";
+
 import ThemeSwitcher from "@/Components/Dark/ThemeSwitcher.vue";
 import { Toaster } from "@/Components/ui/sonner";
 
@@ -22,26 +26,45 @@ defineProps({
     },
 });
 
+// ========================================
+// MOBILE SIDEBAR
+// ========================================
 const sidebarOpen = ref(false);
 
+// ========================================
+// DESKTOP SIDEBAR
+// ========================================
+const sidebarCollapsed = ref(false);
+
+const toggleSidebar = () => {
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
+// ========================================
+// PAGE DATA
+// ========================================
 const page = usePage();
 
-const auth = computed(() => page.props.auth.user);
+const auth = computed(() => page.props.auth?.user ?? null);
 const url = computed(() => page.url);
 </script>
 
 <template>
-    <div>
+    <div class="min-h-screen bg-white dark:bg-background">
         <Head :title="title" />
+
         <Toaster rich-colors position="top-center" />
 
-        <!-- Mobile Sidebar -->
+        <!-- ================================== -->
+        <!-- MOBILE & TABLET SIDEBAR -->
+        <!-- ================================== -->
         <TransitionRoot as="template" :show="sidebarOpen">
             <Dialog
                 as="div"
                 class="relative z-50 lg:hidden"
                 @close="sidebarOpen = false"
             >
+                <!-- Overlay -->
                 <TransitionChild
                     as="template"
                     enter="transition-opacity ease-linear duration-300"
@@ -51,9 +74,10 @@ const url = computed(() => page.url);
                     leave-from="opacity-100"
                     leave-to="opacity-0"
                 >
-                    <div class="fixed inset-0 bg-gray-900/80"></div>
+                    <div class="fixed inset-0 bg-gray-900/70"></div>
                 </TransitionChild>
 
+                <!-- Drawer -->
                 <div class="fixed inset-0 flex">
                     <TransitionChild
                         as="template"
@@ -64,9 +88,8 @@ const url = computed(() => page.url);
                         leave-from="translate-x-0"
                         leave-to="-translate-x-full"
                     >
-                        <DialogPanel
-                            class="relative flex flex-1 w-full max-w-sm mr-16"
-                        >
+                        <DialogPanel class="relative flex w-full max-w-sm">
+                            <!-- Close button -->
                             <TransitionChild
                                 as="template"
                                 enter="ease-in-out duration-300"
@@ -77,22 +100,28 @@ const url = computed(() => page.url);
                                 leave-to="opacity-0"
                             >
                                 <div
-                                    class="absolute top-0 flex justify-center w-16 pt-5 left-full"
+                                    class="absolute left-full top-0 flex w-16 justify-center pt-5"
                                 >
                                     <button
                                         type="button"
-                                        class="-m-2.5 p-2.5"
+                                        class="-m-2.5 p-2.5 text-white"
                                         @click="sidebarOpen = false"
                                     >
-                                        <IconX class="text-white size-6" />
+                                        <IconX class="size-6" />
                                     </button>
                                 </div>
                             </TransitionChild>
 
+                            <!-- Mobile Sidebar Content -->
                             <div
-                                class="flex flex-col px-6 pb-2 overflow-y-auto bg-white grow gap-y-5 dark:bg-background"
+                                class="flex min-h-0 grow flex-col overflow-y-auto bg-slate-50 px-4 py-4 dark:bg-background"
                             >
-                                <Sidebar :auth="auth" :url="url" />
+                                <Sidebar
+                                    :auth="auth"
+                                    :url="url"
+                                    :collapsed="false"
+                                    :collapsible="false"
+                                />
                             </div>
                         </DialogPanel>
                     </TransitionChild>
@@ -100,53 +129,75 @@ const url = computed(() => page.url);
             </Dialog>
         </TransitionRoot>
 
-        <!-- Sidebar Desktop -->
-        <div
-            class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col"
+        <!-- ================================== -->
+        <!-- DESKTOP SIDEBAR -->
+        <!-- ================================== -->
+        <aside
+            class="fixed inset-y-0 left-0 z-50 hidden flex-col overflow-hidden border-r border-slate-200 bg-slate-50 transition-[width] duration-300 ease-in-out dark:border-border dark:bg-background lg:flex"
+            :class="sidebarCollapsed ? 'w-[72px]' : 'w-72'"
         >
             <div
-                class="flex flex-col px-4 overflow-y-auto grow gap-y-5 bg-slate-50 dark:border-r dark:border-r-card dark:bg-background"
+                class="flex min-h-0 grow flex-col overflow-x-hidden overflow-y-auto py-4"
+                :class="sidebarCollapsed ? 'px-2' : 'px-4'"
             >
-                <Sidebar :auth="auth" :url="url" />
+                <Sidebar
+                    :auth="auth"
+                    :url="url"
+                    :collapsed="sidebarCollapsed"
+                    :collapsible="true"
+                    @toggle-collapse="toggleSidebar"
+                />
             </div>
-        </div>
+        </aside>
 
-        <!-- Header Mobile -->
-        <div
-            class="sticky top-0 z-40 flex items-center p-4 bg-white shadow-sm gap-x-6 dark:bg-background sm:px-6 lg:hidden"
+        <!-- ================================== -->
+        <!-- MOBILE & TABLET HEADER -->
+        <!-- ================================== -->
+        <header
+            class="sticky top-0 z-40 flex items-center gap-x-4 border-b border-border bg-white p-4 shadow-sm dark:bg-background sm:px-6 lg:hidden"
         >
+            <!-- Open mobile sidebar -->
             <button
                 type="button"
-                class="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+                class="flex size-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted"
                 @click="sidebarOpen = true"
+                aria-label="Buka sidebar"
             >
                 <IconLayoutSidebar class="size-6" />
             </button>
 
-            <div class="flex-1 text-sm font-semibold leading-6 text-foreground">
+            <!-- Page title -->
+            <div
+                class="min-w-0 flex-1 truncate text-sm font-semibold text-foreground"
+            >
                 {{ title }}
             </div>
 
+            <!-- User avatar -->
             <Link href="#">
                 <Avatar>
                     <AvatarFallback>
-                        {{ auth?.name?.substring(0, 1) ?? "X" }}
+                        {{ auth?.name?.substring(0, 1) ?? "U" }}
                     </AvatarFallback>
                 </Avatar>
             </Link>
-        </div>
+        </header>
 
-        <!-- Main -->
-        <main class="min-h-screen py-4 dark:bg-background lg:pl-72">
+        <!-- ================================== -->
+        <!-- MAIN CONTENT -->
+        <!-- ================================== -->
+        <main
+            class="min-h-screen min-w-0 py-4 transition-[padding] duration-300 ease-in-out dark:bg-background"
+            :class="sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-72'"
+        >
             <div
-                class="w-full max-w-full overflow-x-hidden px-4 sm:px-6 lg:px-8"
+                class="w-full min-w-0 max-w-full overflow-x-hidden px-4 sm:px-6 lg:px-8"
             >
                 <slot />
             </div>
 
-            <div
-                class="fixed z-30 flex w-full justify-center bottom-5 end-5 lg:w-auto lg:justify-end lg:px-8"
-            >
+            <!-- Theme Switcher -->
+            <div class="fixed bottom-5 right-5 z-30 flex justify-end">
                 <ThemeSwitcher />
             </div>
         </main>

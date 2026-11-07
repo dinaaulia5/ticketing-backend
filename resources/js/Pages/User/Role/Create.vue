@@ -43,10 +43,9 @@ const props = defineProps({
 const emit = defineEmits(["update:open"]);
 
 const form = useForm({
+    code: "",
     name: "",
-    slug: "",
     description: "",
-    is_active: true,
 });
 
 /*

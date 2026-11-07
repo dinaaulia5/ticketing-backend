@@ -1,9 +1,8 @@
 <script setup>
-import { computed, watch, reactive } from "vue";
+import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { router } from "@inertiajs/vue3";
 
 import { Button } from "@/Components/ui/button";
-import { Input } from "@/Components/ui/input";
 
 import {
     Select,
@@ -20,99 +19,123 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-
     state: {
         type: Object,
         required: true,
+    },
+    routeName: {
+        type: String,
+        required: true,
+    },
+    only: {
+        type: Array,
+        default: () => ["data", "state"],
     },
 });
 
 const emit = defineEmits(["update:params"]);
 
-const search = computed({
-    get: () => {
-        console.log("1. GET SEARCH:", props.params?.search);
-        return props.params?.search ?? "";
+const searchInput = ref(props.params.search ?? "");
+
+let debounceTimer = null;
+
+// Sinkronisasi nilai search dari halaman induk
+watch(
+    () => props.params.search,
+    (value) => {
+        if ((value ?? "") !== searchInput.value) {
+            searchInput.value = value ?? "";
+        }
     },
+);
 
-    set: (value) => {
-        console.log("2. SET SEARCH:", value);
-
-        emit("update:params", {
-            ...props.params,
-            search: value,
-        });
-    },
-});
-const load = computed({
-    get: () => String(props.params?.load ?? 10),
-    set: (value) => {
-        emit("update:params", {
-            ...props.params,
-            page: 1,
-            load: Number(value),
-        });
-    },
-});
-
-function handleClearAll() {
-    const resettableParams = Object.fromEntries(
-        Object.entries(props.params)
-            .filter(([key]) => !["page", "load"].includes(key))
-            .map(([key]) => [key, ""]),
-    );
-
-    emit("update:params", {
-        ...props.params,
-        ...resettableParams,
-        page: 1,
-        load: props.state.load,
+// Request ke controller
+function submitFilter(newParams) {
+    router.get(route(props.routeName), newParams, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+        only: props.only,
     });
 }
 
-const params = reactive({
-    ...props.params,
+// Live Search
+function handleSearch(event) {
+    const value = event.target.value;
+
+    searchInput.value = value;
+
+    const newParams = {
+        ...props.params,
+        search: value,
+        page: 1,
+    };
+
+    emit("update:params", newParams);
+
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+        submitFilter(newParams);
+    }, 400);
+}
+
+// Load data
+const load = computed({
+    get: () => String(props.params.load ?? 10),
+
+    set: (value) => {
+        clearTimeout(debounceTimer);
+
+        const newParams = {
+            ...props.params,
+            load: Number(value),
+            page: 1,
+        };
+
+        emit("update:params", newParams);
+        submitFilter(newParams);
+    },
 });
 
-watch(
-    () => props.params,
-    (newParams) => {
-        Object.assign(params, newParams);
-    },
-    {
-        deep: true,
-    },
-);
+// Reset filter
+function handleClearAll() {
+    clearTimeout(debounceTimer);
 
-watch(
-    params,
-    () => {
-        console.log("3. PARAMS DI WATCH:", params);
+    const newParams = {
+        ...props.params,
+        search: "",
+        page: 1,
+        load: props.state.load ?? 10,
+        field: props.state.field ?? "created_at",
+        direction: props.state.direction ?? "desc",
+    };
 
-        router.get(route("roles.index"), params, {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-            only: ["roles", "state"],
-        });
-    },
-    {
-        deep: true,
-    },
-);
+    searchInput.value = "";
+
+    emit("update:params", newParams);
+    submitFilter(newParams);
+}
+
+onBeforeUnmount(() => {
+    clearTimeout(debounceTimer);
+});
 </script>
 
 <template>
     <div
         class="flex w-full flex-col gap-4 px-4 py-2 lg:flex-row lg:items-center"
     >
+        <!-- Live Search -->
         <input
-            :value="search"
-            @input="search = $event.target.value"
+            :value="searchInput"
+            @input="handleSearch"
+            type="search"
             class="w-full rounded-md border px-3 py-2 sm:w-1/4"
-            placeholder="Search..."
+            placeholder="Cari data..."
         />
 
+        <!-- Load -->
         <Select v-model="load">
             <SelectTrigger class="w-full sm:w-24">
                 <SelectValue placeholder="Load" />
@@ -131,6 +154,7 @@ watch(
 
         <slot />
 
+        <!-- Clear -->
         <Button variant="blue" size="xl" @click="handleClearAll">
             <IconRefresh class="size-4" />
             Bersihkan
