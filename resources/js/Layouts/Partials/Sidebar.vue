@@ -212,6 +212,14 @@ const hasMaster = computed(() => {
                 >
                     Master
                 </div>
+
+                <NavLink
+                    v-if="hasPermission('categories.view')"
+                    title="Category"
+                    :url="route('categories.index')"
+                    :active="url.startsWith('/categories')"
+                    :icon="IconKey"
+                />
             </template>
         </ul>
     </nav>

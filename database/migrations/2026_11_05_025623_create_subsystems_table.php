@@ -11,8 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('speakers', function (Blueprint $table) {
+        Schema::create('subsystems', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('category_id')
+                ->constrained('categories')
+                ->restrictOnDelete();
+            $table->string('code', 20)->unique();
+            $table->string('name', 100);
+            $table->text('description')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -22,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('speakers');
+        Schema::dropIfExists('subsystems');
     }
 };

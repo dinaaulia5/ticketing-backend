@@ -1,14 +1,15 @@
 <script setup>
 import { watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
+import { toast } from "vue-sonner";
 
+import { flashMessage } from "@/lib/utils";
 import InputError from "@/Components/InputError.vue";
 
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { Textarea } from "@/Components/ui/textarea";
-import { Switch } from "@/Components/ui/switch";
 
 import {
     Dialog,
@@ -19,7 +20,10 @@ import {
 } from "@/Components/ui/dialog";
 
 const props = defineProps({
-    open: Boolean,
+    open: {
+        type: Boolean,
+        default: false,
+    },
 
     mode: {
         type: String,
@@ -38,44 +42,74 @@ const form = useForm({
     code: "",
     name: "",
     description: "",
-    is_active: true,
 });
 
+/*
+|--------------------------------------------------------------------------
+| Watch Category
+|--------------------------------------------------------------------------
+*/
+
 watch(
-    () => props.category,
-    (category) => {
+    [() => props.category, () => props.mode, () => props.open],
+    ([category, mode, open]) => {
+        if (!open) return;
+
         form.clearErrors();
 
-        if (props.mode === "edit" && category) {
-            form.code = category.code;
-            form.name = category.name;
-            form.description = category.description;
-            form.is_active = category.is_active;
+        if (mode === "edit" && category) {
+            form.code = category.code ?? "";
+            form.name = category.name ?? "";
+            form.description = category.description ?? "";
         } else {
             form.reset();
-            form.is_active = true;
+            form.clearErrors();
         }
     },
-    { immediate: true },
+    {
+        immediate: true,
+    },
 );
+
+/*
+|--------------------------------------------------------------------------
+| Submit
+|--------------------------------------------------------------------------
+*/
 
 const submit = () => {
     if (props.mode === "create") {
-        form.post(route("training.categories.store"), {
+        form.post(route("categories.store"), {
             preserveScroll: true,
-            onSuccess: () => {
+
+            onSuccess: (page) => {
+                const flash = flashMessage(page);
+
+                if (flash) {
+                    toast[flash.type ?? "success"](flash.message);
+                }
+
                 form.reset();
                 emit("update:open", false);
             },
         });
-    } else {
-        form.put(route("training.categories.update", props.category.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                emit("update:open", false);
-            },
-        });
+
+        return;
     }
+
+    form.put(route("categories.update", props.category.id), {
+        preserveScroll: true,
+
+        onSuccess: (page) => {
+            const flash = flashMessage(page);
+
+            if (flash) {
+                toast[flash.type ?? "success"](flash.message);
+            }
+
+            emit("update:open", false);
+        },
+    });
 };
 </script>
 
@@ -85,34 +119,47 @@ const submit = () => {
             <DialogHeader>
                 <DialogTitle>
                     {{
-                        mode === "create"
-                            ? "Tambah Kategori Pelatihan"
-                            : "Edit Kategori Pelatihan"
+                        mode === "create" ? "Tambah Kategori" : "Edit Kategori"
                     }}
                 </DialogTitle>
 
                 <DialogDescription>
-                    Lengkapi informasi kategori pelatihan.
+                    {{
+                        mode === "create"
+                            ? "Lengkapi informasi kategori layanan IT yang akan ditambahkan."
+                            : "Perbarui informasi kategori sesuai kebutuhan."
+                    }}
                 </DialogDescription>
             </DialogHeader>
 
             <form @submit.prevent="submit" class="space-y-5">
                 <!-- Code -->
                 <div class="space-y-2">
-                    <Label>Kode</Label>
+                    <Label for="code">Kode Kategori</Label>
 
-                    <Input v-model="form.code" placeholder="Contoh : CAT001" />
+                    <Input
+                        id="code"
+                        v-model="form.code"
+                        placeholder="Contoh: HW"
+                        maxlength="20"
+                    />
+
+                    <p class="text-xs text-muted-foreground">
+                        Gunakan kode unik untuk setiap kategori.
+                    </p>
 
                     <InputError :message="form.errors.code" />
                 </div>
 
                 <!-- Name -->
                 <div class="space-y-2">
-                    <Label>Nama Kategori</Label>
+                    <Label for="name">Nama Kategori</Label>
 
                     <Input
+                        id="name"
                         v-model="form.name"
-                        placeholder="Contoh : Leadership"
+                        placeholder="Contoh: Hardware"
+                        maxlength="100"
                     />
 
                     <InputError :message="form.errors.name" />
@@ -120,9 +167,10 @@ const submit = () => {
 
                 <!-- Description -->
                 <div class="space-y-2">
-                    <Label>Deskripsi</Label>
+                    <Label for="description">Deskripsi</Label>
 
                     <Textarea
+                        id="description"
                         v-model="form.description"
                         placeholder="Masukkan deskripsi kategori..."
                         rows="4"
@@ -131,20 +179,7 @@ const submit = () => {
                     <InputError :message="form.errors.description" />
                 </div>
 
-                <!-- Status -->
-                <div
-                    class="flex items-center justify-between rounded-lg border p-4"
-                >
-                    <div>
-                        <Label>Status</Label>
-                        <p class="text-sm text-muted-foreground">
-                            Aktifkan kategori agar dapat digunakan.
-                        </p>
-                    </div>
-
-                    <Switch v-model:checked="form.is_active" />
-                </div>
-
+                <!-- Action -->
                 <div class="flex justify-end gap-2 border-t pt-5">
                     <Button
                         type="button"
@@ -159,7 +194,13 @@ const submit = () => {
                         variant="emerald"
                         :disabled="form.processing"
                     >
-                        {{ mode === "create" ? "Simpan" : "Perbarui" }}
+                        {{
+                            form.processing
+                                ? "Menyimpan..."
+                                : mode === "create"
+                                  ? "Simpan"
+                                  : "Perbarui"
+                        }}
                     </Button>
                 </div>
             </form>

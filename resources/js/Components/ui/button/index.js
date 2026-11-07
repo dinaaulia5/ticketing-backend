@@ -19,9 +19,11 @@ export const buttonVariants = cva(
                 link: "text-primary underline-offset-4 hover:underline",
                 blue: "text-white bg-gradient-to-r from-blue-500 via-blue-500 to-blue-500",
                 purple: "text-white bg-gradient-to-r from-purple-500 via-purple-500 to-purple-500",
-                blue: "text-white bg-gradient-to-r from-blue-500 via-blue-500 to-blue-500",
                 red: "text-white bg-gradient-to-r from-red-500 via-red-500 to-red-500",
                 cyan: "text-white bg-gradient-to-r from-cyan-500 via-cyan-500 to-cyan-500",
+                success:
+                    "text-white bg-gradient-to-r from-green-400 via-green-500 to-green-500 [&>svg]:text-destructive",
+                info: "text-white bg-gradient-to-r from-sky-400 via-sky-500 to-sky-500 [&>svg]:text-destructive",
             },
             size: {
                 default: "h-9 px-4 py-2",
