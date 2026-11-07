@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Master\CategoryController;
 use App\Http\Controllers\Master\SubsystemController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\Ticket\TicketCommentController;
+use App\Http\Controllers\Ticket\TicketController;
 use App\Http\Controllers\User\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -89,4 +91,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('categories', CategoryController::class)->names('categories');
     Route::resource('subsystems', SubsystemController::class)->names('subsystems');
+    Route::resource('tickets', TicketController::class)->names('tickets');
+    Route::post('tickets/{ticket}/comments', [TicketCommentController::class, 'store'])->name('tickets.comments.store');
 });

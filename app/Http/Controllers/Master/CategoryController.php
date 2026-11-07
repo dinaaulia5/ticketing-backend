@@ -91,7 +91,6 @@ class CategoryController extends Controller
         ]);
     }
 
-
     public function store(CategoryRequest $request): RedirectResponse
     {
         try {

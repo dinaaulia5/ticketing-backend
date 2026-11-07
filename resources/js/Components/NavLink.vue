@@ -37,6 +37,11 @@ defineProps({
         type: String,
         default: "",
     },
+
+    collapsed: {
+        type: Boolean,
+        default: false,
+    },
 });
 </script>
 
@@ -45,18 +50,33 @@ defineProps({
         :href="url"
         :method="method"
         :as="as"
+        :title="collapsed ? title : undefined"
+        :aria-label="title"
+        :aria-current="active ? 'page' : undefined"
         :class="
             cn(
+                'group flex w-full min-w-0 items-center rounded-lg transition-all duration-200',
+                collapsed
+                    ? 'justify-center px-0 py-3'
+                    : 'justify-start gap-3 px-3 py-2.5',
                 active
-                    ? 'bg-gradient-to-br from-cyan-500 via-cyan-500 to-bule-200 font-medium text-white'
-                    : 'hover:bg-muted',
-                'flex items-center gap-3 rounded-lg p-2.5 transition-all dark:text-white',
+                    ? 'bg-gradient-to-br from-cyan-500 via-cyan-500 to-cyan-300 font-semibold text-white shadow-sm'
+                    : 'text-foreground hover:bg-muted',
                 $props.class,
             )
         "
     >
-        <component :is="icon" v-if="icon" class="size-5" />
+        <!-- ICON -->
+        <component
+            :is="icon"
+            v-if="icon"
+            class="size-5 shrink-0"
+            :class="active ? 'text-white' : 'text-current'"
+        />
 
-        {{ title }}
+        <!-- TITLE -->
+        <span v-if="!collapsed" class="min-w-0 flex-1 truncate text-sm">
+            {{ title }}
+        </span>
     </Link>
 </template>
