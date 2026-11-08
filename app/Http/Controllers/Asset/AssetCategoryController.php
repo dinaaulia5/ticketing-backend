@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers\Asset;
 
+use App\Enums\MessageType;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Asset\AssetCategoryRequest;
+use App\Http\Resources\Asset\AssetCategoryResource;
+use App\Models\Asset\AssetCategory;
+use App\Supports\Pages\Asset\AssetCategoryPage;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
+use Throwable;
 
 class AssetCategoryController extends Controller
 {
     public function index(): Response
     {
-        $categories = Category::query()
+        $categories = AssetCategory::query()
             ->select([
                 'id',
                 'code',
@@ -18,51 +24,18 @@ class AssetCategoryController extends Controller
                 'description',
                 'created_at',
             ])
-            ->withCount('subsystems')
             ->filter(request()->only(['search']))
             ->sorting(request()->only(['field', 'direction']))
             ->paginate(request()->load ?? 10)
             ->withQueryString();
 
-        return inertia('Master/Category/Index', [
-            'pageSettings' => fn() => CategorySubsystemPage::index(),
+        return inertia('Asset/Category/Index', [
+            'pageSettings' => fn() => AssetCategoryPage::index(),
 
-            'categories' => fn() => CategoryResource::collection($categories)
+            'categories' => fn() => AssetCategoryResource::collection($categories)
                 ->additional([
                     'meta' => [
                         'has_pages' => $categories->hasPages(),
-                    ],
-                ]),
-
-            'state' => fn() => [
-                'page' => request()->page ?? 1,
-                'search' => request()->search ?? '',
-                'load' => request()->load ?? 10,
-            ],
-
-            'items' => fn() => CategorySubsystemPage::breadcrumbs(),
-        ]);
-    }
-    public function show(string $id): Response
-    {
-        $category = Category::query()
-            ->findOrFail($id);
-
-        $subsystems = $category->subsystems()
-            ->filter(request()->only(['search']))
-            ->sorting(request()->only(['field', 'direction']))
-            ->paginate(request()->load ?? 10)
-            ->withQueryString();
-
-        return inertia('Master/Category/Detail', [
-            'pageSettings' => fn() => CategorySubsystemPage::index(),
-
-            'category' => fn() => (new CategoryResource($category))->resolve(),
-
-            'subsystems' => fn() => SubsystemResource::collection($subsystems)
-                ->additional([
-                    'meta' => [
-                        'has_pages' => $subsystems->hasPages(),
                     ],
                 ]),
 
@@ -74,74 +47,84 @@ class AssetCategoryController extends Controller
                 'direction' => request()->direction ?? 'desc',
             ],
 
-            'items' => fn() => [
-                ...CategorySubsystemPage::breadcrumbs(),
-                [
-                    'label' => 'Detail Kategori',
-                ],
-            ],
+            'items' => fn() => AssetCategoryPage::breadcrumbs(),
         ]);
     }
 
-    public function store(CategoryRequest $request): RedirectResponse
+    public function store(AssetCategoryRequest $request): RedirectResponse
     {
         try {
-            Category::create([
+            AssetCategory::create([
                 'code' => $request->code,
                 'name' => $request->name,
-                'description' => $request->description
-            ]);
-
-            flashMessage(MessageType::CREATED->message('Kategori'));
-            return to_route('categories.index');
-        } catch (Throwable $e) {
-            flashMessage(MessageType::ERROR->message(error: $e->getMessage()), 'error');
-            return to_route('categories.index');
-        }
-    }
-
-
-    public function update(CategoryRequest $request, string $id): RedirectResponse
-    {
-        try {
-            $category = Category::query()->findOrFail($id);
-
-            $category->update([
-                'name' => $request->name,
-                'code' => $request->code,
                 'description' => $request->description,
             ]);
 
-            flashMessage(MessageType::UPDATED->message('Kategori'));
+            flashMessage(MessageType::CREATED->message('Kategori Aset'));
 
-            return to_route('categories.index');
+            return to_route('asset-categories.index');
         } catch (Throwable $e) {
             flashMessage(
                 MessageType::ERROR->message(error: $e->getMessage()),
                 'error'
             );
 
-            return to_route('categories.index');
+            return to_route('asset-categories.index');
         }
     }
 
-
-
-    public function destroy(string $id)
-    {
+    public function update(
+        AssetCategoryRequest $request,
+        string $id
+    ): RedirectResponse {
         try {
-            $category = Category::query()->findOrFail($id);
-            $category->delete();
+            $category = AssetCategory::query()->findOrFail($id);
 
+            $category->update([
+                'code' => $request->code,
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
+
+            flashMessage(MessageType::UPDATED->message('Kategori Aset'));
+
+            return to_route('asset-categories.index');
+        } catch (Throwable $e) {
             flashMessage(
-                MessageType::DELETE->message('Kategori')
+                MessageType::ERROR->message(error: $e->getMessage()),
+                'error'
             );
 
-            return to_route('categories.index');
-        } catch (Throwable $e) {
-            flashMessage(MessageType::ERROR->message(error: $e->getMessage()), 'error');
+            return to_route('asset-categories.index');
+        }
+    }
 
-            return to_route('categories.index');
+    public function destroy(string $id): RedirectResponse
+    {
+        try {
+            $category = AssetCategory::query()->findOrFail($id);
+
+            if ($category->assets()->exists()) {
+                flashMessage(
+                    'Kategori tidak dapat dihapus karena masih digunakan oleh aset.',
+                    'error'
+                );
+
+                return to_route('asset-categories.index');
+            }
+
+            $category->delete();
+
+            flashMessage(MessageType::DELETE->message('Kategori Aset'));
+
+            return to_route('asset-categories.index');
+        } catch (Throwable $e) {
+            flashMessage(
+                MessageType::ERROR->message(error: $e->getMessage()),
+                'error'
+            );
+
+            return to_route('asset-categories.index');
         }
     }
 }

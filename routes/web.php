@@ -1,6 +1,10 @@
 
 <?php
 
+use App\Http\Controllers\Asset\AssetAssignmentController;
+use App\Http\Controllers\Asset\AssetAttachmentController;
+use App\Http\Controllers\Asset\AssetCategoryController;
+use App\Http\Controllers\Asset\AssetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Master\CategoryController;
 use App\Http\Controllers\Master\SubsystemController;
@@ -91,6 +95,23 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('categories', CategoryController::class)->names('categories');
     Route::resource('subsystems', SubsystemController::class)->names('subsystems');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ticket Management 
+    |--------------------------------------------------------------------------
+    */
     Route::resource('tickets', TicketController::class)->names('tickets');
     Route::post('tickets/{ticket}/comments', [TicketCommentController::class, 'store'])->name('tickets.comments.store');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Asset Management 
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('assets', AssetController::class)->names('assets');
+    Route::resource('asset-categories', AssetCategoryController::class)->names('asset-categories');
+    Route::resource('asset-attachments', AssetAttachmentController::class)->names('asset-attachments');
+    Route::resource('asset-assignments', AssetAssignmentController::class)
+        ->names('asset-assignments');
 });
