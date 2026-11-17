@@ -12,7 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('asset_assignments', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+
+            $table->foreignUuid('asset_id')
+                ->constrained('assets')
+                ->restrictOnDelete();
+
+            $table->foreignUuid('employee_id')
+                ->constrained('employees')
+                ->restrictOnDelete();
+
+            $table->foreignUuid('assigned_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->timestamp('assigned_at');
+            $table->timestamp('returned_at')->nullable();
+
+            $table->text('notes')->nullable();
+
             $table->timestamps();
         });
     }

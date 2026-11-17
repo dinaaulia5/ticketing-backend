@@ -34,7 +34,7 @@ const handleClick = (event) => {
         :href="url"
         class="flex min-w-0 items-center gap-x-2 overflow-hidden"
         :class="collapsed ? 'justify-center' : 'justify-start'"
-        :title="collapsed ? 'Buka sidebar' : 'Travel Agentic'"
+        :title="collapsed ? 'Buka sidebar' : 'Sistem Helpdesk'"
         @click="handleClick"
     >
         <!-- LOGO ICON -->
@@ -56,7 +56,7 @@ const handleClick = (event) => {
             <span
                 class="text-xl font-semibold leading-relaxed tracking-wide text-foreground dark:text-cyan-500"
             >
-                Travel Agentic
+                Sistem Helpdesk
                 <span class="text-lg text-cyan-500 dark:text-white"> + </span>
             </span>
         </div>

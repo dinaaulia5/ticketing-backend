@@ -138,7 +138,11 @@ const accessManagementOpen = ref(
 // ========================================
 
 const hasMaster = computed(() => {
-    return hasPermission("categories.view") || hasPermission("tickets.view");
+    return (
+        hasPermission("categories.view") ||
+        hasPermission("tickets.view") ||
+        hasPermission("assets.view")
+    );
 });
 
 // Buka dropdown otomatis ketika masuk halaman terkait
@@ -357,6 +361,22 @@ watch(
                     :url="route('tickets.index')"
                     :active="url.startsWith('/tickets')"
                     :icon="IconTicket"
+                    :collapsed="collapsed"
+                />
+
+                <li
+                    v-if="!collapsed"
+                    class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                    Master
+                </li>
+
+                <NavLink
+                    v-if="hasPermission('assets.view')"
+                    title="Asset"
+                    :url="route('assets.index')"
+                    :active="url.startsWith('/assets')"
+                    :icon="IconCategory"
                     :collapsed="collapsed"
                 />
             </template>
