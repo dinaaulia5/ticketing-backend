@@ -73,3 +73,20 @@
         @apply bg-background text-foreground;
     }
 }
+
+@layer base {
+    html {
+        min-height: 100%;
+        overflow-y: auto;
+    }
+
+    body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    #app {
+        min-height: 100vh;
+    }
+}

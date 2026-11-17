@@ -29,7 +29,7 @@ class AssetCategoryController extends Controller
             ->paginate(request()->load ?? 10)
             ->withQueryString();
 
-        return inertia('Asset/Category/Index', [
+        return inertia('Asset/Index', [
             'pageSettings' => fn() => AssetCategoryPage::index(),
 
             'categories' => fn() => AssetCategoryResource::collection($categories)
@@ -62,21 +62,23 @@ class AssetCategoryController extends Controller
 
             flashMessage(MessageType::CREATED->message('Kategori Aset'));
 
-            return to_route('asset-categories.index');
+            return to_route('assets.index', [
+                'tab' => 'category',
+            ]);
         } catch (Throwable $e) {
             flashMessage(
                 MessageType::ERROR->message(error: $e->getMessage()),
                 'error'
             );
 
-            return to_route('asset-categories.index');
+            return to_route('assets.index', [
+                'tab' => 'category',
+            ]);
         }
     }
 
-    public function update(
-        AssetCategoryRequest $request,
-        string $id
-    ): RedirectResponse {
+    public function update(AssetCategoryRequest $request, string $id): RedirectResponse
+    {
         try {
             $category = AssetCategory::query()->findOrFail($id);
 
@@ -88,14 +90,14 @@ class AssetCategoryController extends Controller
 
             flashMessage(MessageType::UPDATED->message('Kategori Aset'));
 
-            return to_route('asset-categories.index');
+            return to_route('assets.index', ['tab' => 'category']);
         } catch (Throwable $e) {
             flashMessage(
                 MessageType::ERROR->message(error: $e->getMessage()),
                 'error'
             );
 
-            return to_route('asset-categories.index');
+            return to_route('assets.index', ['tab' => 'category']);
         }
     }
 

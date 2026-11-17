@@ -5,6 +5,7 @@ use App\Http\Controllers\Asset\AssetAssignmentController;
 use App\Http\Controllers\Asset\AssetAttachmentController;
 use App\Http\Controllers\Asset\AssetCategoryController;
 use App\Http\Controllers\Asset\AssetController;
+use App\Http\Controllers\Asset\LocationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Master\CategoryController;
 use App\Http\Controllers\Master\SubsystemController;
@@ -114,4 +115,5 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('asset-attachments', AssetAttachmentController::class)->names('asset-attachments');
     Route::resource('asset-assignments', AssetAssignmentController::class)
         ->names('asset-assignments');
+    Route::resource('locations', LocationController::class)->names('locations');
 });

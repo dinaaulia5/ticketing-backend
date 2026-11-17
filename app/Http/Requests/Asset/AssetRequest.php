@@ -14,7 +14,7 @@ class AssetRequest extends FormRequest
 
     public function rules(): array
     {
-        $asset = $this->route('asset');
+        $assetId = $this->route('asset');
 
         return [
             // Asset Identity
@@ -22,7 +22,7 @@ class AssetRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('assets', 'asset_code')->ignore($asset?->id),
+                Rule::unique('assets', 'asset_code')->ignore($assetId),
             ],
 
             'name' => [
@@ -34,10 +34,10 @@ class AssetRequest extends FormRequest
             'asset_category_id' => [
                 'required',
                 'uuid',
-                'exists:asset_categories,id',
+                Rule::exists('asset_categories', 'id')
+                    ->whereNull('deleted_at'),
             ],
 
-            // Asset Information
             'brand' => [
                 'nullable',
                 'string',
@@ -54,10 +54,10 @@ class AssetRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:150',
-                Rule::unique('assets', 'serial_number')->ignore($asset?->id),
+                Rule::unique('assets', 'serial_number')->ignore($assetId),
             ],
 
-            // Technical Specifications
+            // Technical Specification
             'processor' => [
                 'nullable',
                 'string',
@@ -97,7 +97,8 @@ class AssetRequest extends FormRequest
             'location_id' => [
                 'nullable',
                 'uuid',
-                'exists:locations,id',
+                Rule::exists('locations', 'id')
+                    ->whereNull('deleted_at'),
             ],
 
             // Purchase Information
@@ -127,25 +128,51 @@ class AssetRequest extends FormRequest
             // Condition & Status
             'condition' => [
                 'required',
+                'string',
                 Rule::in(['good', 'fair', 'damaged']),
             ],
 
             'status' => [
                 'required',
-                Rule::in([
-                    'available',
-                    'assigned',
-                    'maintenance',
-                    'retired',
-                ]),
+                'string',
+                Rule::in(['available', 'assigned', 'maintenance', 'retired']),
             ],
 
-            // Additional Information
             'notes' => [
                 'nullable',
                 'string',
             ],
+
+            // Attachments
+            'attachments' => [
+                'nullable',
+                'array',
+                'max:5',
+            ],
+
+            'attachments.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx',
+                'max:5120',
+            ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $files = $this->file('attachments', []);
+
+            $totalSize = collect($files)
+                ->sum(fn($file) => $file->getSize());
+
+            if ($totalSize > 25 * 1024 * 1024) {
+                $validator->errors()->add(
+                    'attachments',
+                    'Total ukuran lampiran maksimal 25 MB.'
+                );
+            }
+        });
     }
 
     public function messages(): array
@@ -153,20 +180,22 @@ class AssetRequest extends FormRequest
         return [
             'asset_code.required' => 'Kode aset wajib diisi.',
             'asset_code.unique' => 'Kode aset sudah digunakan.',
+            'asset_code.max' => 'Kode aset maksimal 50 karakter.',
 
             'name.required' => 'Nama aset wajib diisi.',
+            'name.max' => 'Nama aset maksimal 150 karakter.',
 
             'asset_category_id.required' => 'Kategori aset wajib dipilih.',
-            'asset_category_id.exists' => 'Kategori aset tidak ditemukan.',
+            'asset_category_id.exists' => 'Kategori aset tidak ditemukan atau tidak aktif.',
 
-            'serial_number.unique' => 'Nomor seri aset sudah terdaftar.',
+            'serial_number.unique' => 'Nomor serial aset sudah digunakan.',
 
             'ip_address.ip' => 'Format IP Address tidak valid.',
 
-            'location_id.exists' => 'Lokasi aset tidak ditemukan.',
+            'location_id.exists' => 'Lokasi tidak ditemukan atau tidak aktif.',
 
             'purchase_price.numeric' => 'Harga pembelian harus berupa angka.',
-            'purchase_price.min' => 'Harga pembelian tidak boleh negatif.',
+            'purchase_price.min' => 'Harga pembelian tidak boleh kurang dari 0.',
 
             'warranty_expiry.after_or_equal' => 'Tanggal garansi tidak boleh sebelum tanggal pembelian.',
             'end_of_life.after_or_equal' => 'Tanggal akhir masa pakai tidak boleh sebelum tanggal pembelian.',
@@ -176,6 +205,12 @@ class AssetRequest extends FormRequest
 
             'status.required' => 'Status aset wajib dipilih.',
             'status.in' => 'Status aset tidak valid.',
+
+            'attachments.array' => 'Format lampiran tidak valid.',
+            'attachments.max' => 'Maksimal 5 file lampiran.',
+            'attachments.*.file' => 'Lampiran harus berupa file.',
+            'attachments.*.mimes' => 'Format lampiran harus JPG, JPEG, PNG, PDF, DOC, DOCX, XLS, atau XLSX.',
+            'attachments.*.max' => 'Ukuran setiap lampiran maksimal 5 MB.',
         ];
     }
 }

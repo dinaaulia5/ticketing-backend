@@ -68,10 +68,10 @@ class Asset extends Model
         return $this->belongsTo(AssetCategory::class, 'asset_category_id', 'id');
     }
 
-    // public function location(): BelongsTo
-    // {
-    //     return $this->belongsTo(Location::class, 'location_id', 'id');
-    // }
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id', 'id');
+    }
 
     public function attachments(): HasMany
     {

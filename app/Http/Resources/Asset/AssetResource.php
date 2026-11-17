@@ -54,7 +54,7 @@ class AssetResource extends JsonResource
 
             // Additional Information
             'notes' => $this->notes,
-
+            'asset_category_id' => $this->asset_category_id,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
